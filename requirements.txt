@@ -1,5 +1,5 @@
 numpy
 rasterio
 numba
-tqdm
+llvmlite
 pyinstaller
