@@ -459,6 +459,9 @@ class App:
 
 
 if __name__ == "__main__":
+    # Necessario su Windows/PyInstaller: evita che i processi figli di multiprocessing
+    # rieseguano il bootstrap GUI aprendo nuove finestre.
+    freeze_support()
     root = tk.Tk()
     app = App(root)
     root.mainloop()
