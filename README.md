@@ -1,86 +1,111 @@
-# Wind Turbine Visible Height GUI (Desktop)
+# Wind Visible Height GUI (Windows Desktop)
 
-Tool desktop **Tkinter** (non web, non CLI) per calcolare, da un DEM GeoTIFF, i **metri verticali visibili** di un aerogeneratore per ogni pixel osservatore.
+Applicazione desktop **Tkinter** (GUI, non web app e non CLI) per calcolare, dato un DEM GeoTIFF e la posizione XY di una turbina, i **metri di aerogeneratore visibili** per ogni cella (`0..H`) considerando l'orografia.
 
-## Deliverable
-- `wind_turbine_visible_height_gui.py`
-- `requirements.txt`
-- `build.bat`
+## Deliverables
+1. `wind_visible_height_gui.py`
+2. `requirements.txt`
+3. `wind_visible_height.spec`
+4. `build_fast.bat` (consigliato, one-folder)
+5. `build_onefile.bat` (opzionale, più fragile)
+6. `README.md`
 
 ## Requisiti
-- Python 3.10+
-- Windows (target build `.exe`)
+- **Windows**
+- **Python 3.10 o 3.11 consigliati**
+- DEM con **CRS metrico proiettato** (UTM o simili)
 
-Dipendenze principali:
-- `rasterio`
-- `numpy`
-- `numba` (opzionale, fallback automatico se assente)
-- `tqdm` (opzionale, non necessaria alla GUI ma inclusa)
-- `pyinstaller` (per build EXE)
+> Nota: con Python 3.13 sono frequenti incompatibilità nella catena `numba/llvmlite + pyinstaller`, per via della maturità non uniforme dei wheel binari e dell'integrazione del JIT nel bundle.
 
-## Uso
-1. Avvia:
-   ```bash
-   python wind_turbine_visible_height_gui.py
-   ```
-2. Seleziona il file DEM GeoTIFF (`Sfoglia…`).
-3. Inserisci coordinate turbina `X`, `Y` (stesso CRS del DEM).
-4. Imposta parametri:
-   - Altezza turbina `H` (default 200 m)
-   - Altezza osservatore (default 1.6 m)
-   - `Strict nodata` (default ON)
-5. Seleziona output (`Salva come…`).
-6. Clicca `Calcola`.
+Installazione dipendenze:
+```bat
+python -m pip install -r requirements.txt
+```
+
+## Avvio in sviluppo
+```bat
+python wind_visible_height_gui.py
+```
+
+## Parametri GUI
+- Selezione DEM (`GeoTIFF`)
+- X, Y turbina (float)
+- H turbina (default `200.0`)
+- Altezza osservatore (default `1.6`)
+- `strict nodata` (default ON)
+- `max_distance_m` (default `15000`, `0=illimitato`)
+- `sample_step_m` (default `25`, minimo `1 pixel`)
+- `n_workers` (default = CPU count)
+- Pulsante **Calcola**
+- Progress bar + log con timestamp
+
+## Algoritmo
+Per ogni cella osservatore:
+- `z_obs = dem[r,c] + observer_height`
+- turbina: `z_base` dal pixel nearest in cui cade `(X,Y)`, `z_top = z_base + H`
+- campionamento profilo osservatore→turbina a passo metrico `sample_step_m` (nearest)
+- `alpha_i = (z_i - z_obs)/d_i`, `max_alpha = max(alpha_i)`
+- `beta_base = (z_base - z_obs)/D`
+- `beta_top  = (z_top  - z_obs)/D`
+- regole:
+  - `max_alpha <= beta_base` -> `visible = H`
+  - `max_alpha >= beta_top` -> `visible = 0`
+  - altrimenti
+    - `h_block = (z_obs + max_alpha*D) - z_base`
+    - `visible = H - h_block`
+- clamp finale `[0,H]`
 
 Output:
 - GeoTIFF `float32`
-- stesso `CRS`, `transform`, `shape` del DEM
-- `compress=LZW`
 - `nodata=-9999`
+- `compress=LZW`
+- stesso `CRS/transform/shape` del DEM
 
-## Algoritmo implementato
-Per ogni pixel osservatore valido:
-- `z_obs = dem[r,c] + observer_height`
-- turbina da coordinate XY in `(rt,ct)` con inverse affine (`rowcol`)
-- `z_base = dem[rt,ct]`, `z_top = z_base + H`
-- distanza orizzontale `D` tra centri pixel (via affine)
-- campionamento celle intermedie su linea osservatore→turbina con Bresenham (esclusi start/end)
-- per ciascun campione valido: `alpha_i = (dem_i - z_obs)/d_i`
-- `max_alpha = max(alpha_i)` (oppure `-inf` se nessun campione valido)
-- `beta_base = (z_base - z_obs)/D`, `beta_top = (z_top - z_obs)/D`
-- regole:
-  - se `max_alpha <= beta_base` ⇒ visibile `H`
-  - se `max_alpha >= beta_top` ⇒ visibile `0`
-  - altrimenti interpolazione del tratto occultato
-- clamp finale in `[0, H]`
+## Ottimizzazioni implementate
+1. **Filtro distanza**: oltre `max_distance_m` il valore è `0`.
+2. **Stepping metrico** (`sample_step_m`) invece di attraversare tutti i pixel intermedi.
+3. **Parallelizzazione process-based** (`ProcessPoolExecutor`) a blocchi di righe.
+4. **Numba JIT** (`@njit(cache=True, fastmath=True)`) sul loop core, con fallback Python se non disponibile.
 
-Nodata intermedi:
-- `Strict nodata = ON`: se presente nodata su campioni intermedi, output pixel = nodata.
-- `Strict nodata = OFF`: campioni nodata ignorati.
-
-## Build EXE con PyInstaller
-Esegui:
+## Build EXE (consigliata)
 ```bat
-build.bat
+build_fast.bat
+```
+Esegue:
+```bat
+python -m pip install -r requirements.txt
+pyinstaller --noconfirm --clean wind_visible_height.spec
 ```
 
-Comando standard:
+Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-folder, più robusto).
+
+## Build onefile (opzionale)
 ```bat
-pyinstaller --noconfirm --onefile --windowed wind_turbine_visible_height_gui.py
+build_onefile.bat
+```
+Esegue:
+```bat
+pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
 ```
 
-Fallback utile per rasterio/GDAL/PROJ:
-```bat
-pyinstaller --noconfirm --onefile --windowed --collect-all rasterio wind_turbine_visible_height_gui.py
-```
+## Packaging notes (GDAL/PROJ + Numba)
+- Lo `.spec` include hidden imports di `rasterio`, `numba`, `llvmlite`.
+- Include librerie dinamiche per `rasterio` e `llvmlite`.
+- All'avvio l'app imposta `GDAL_DATA` e `PROJ_LIB` cercando directory nel bundle (`sys._MEIPASS` / cartella exe) **prima di importare rasterio**.
 
-## Problemi noti packaging rasterio (GDAL/PROJ)
-Se l'EXE si avvia ma fallisce all'apertura/scrittura raster:
-1. Prova prima `--collect-all rasterio`.
-2. Usa un `.spec` custom includendo `datas` e `binaries` di rasterio/GDAL/PROJ.
-3. Imposta variabili ambiente in runtime, se necessario:
-   - `PROJ_LIB`
-   - `GDAL_DATA`
-4. Verifica che l'ambiente di build abbia versioni compatibili di `rasterio`, `gdal`, `proj`.
-
-Suggerimento: testare l'EXE su macchina pulita (senza Python installato) per validare il packaging completo.
+## Troubleshooting
+1. **"CRS geografico non supportato"**
+   - Riproietta il DEM in CRS metrico (es. UTM) e riprova.
+2. **Calcolo troppo lento**
+   - Riduci `max_distance_m` (parametro più impattante).
+   - Aumenta `sample_step_m` (es. 30–50 m).
+   - Imposta `n_workers` vicino al numero di core fisici/logici.
+3. **Output vuoto/quasi zero**
+   - Verifica coordinate XY turbina nel CRS corretto del DEM.
+   - Verifica che la cella turbina non sia `nodata`.
+4. **Errore runtime GDAL/PROJ nell'exe**
+   - Preferisci build `one-folder` (`build_fast.bat`).
+   - Verifica che nella cartella `dist\wind_visible_height\` siano presenti dati PROJ/GDAL.
+5. **Numba non usato**
+   - Controlla log GUI: deve indicare `Numba disponibile: True`.
+   - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
