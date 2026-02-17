@@ -5,7 +5,7 @@ import sys
 import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, freeze_support
 from tkinter import filedialog, messagebox
 import tkinter as tk
 from tkinter import ttk
@@ -459,6 +459,7 @@ class App:
 
 
 if __name__ == "__main__":
+    freeze_support()
     root = tk.Tk()
     app = App(root)
     root.mainloop()
