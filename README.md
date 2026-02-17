@@ -109,3 +109,33 @@ pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
 5. **Numba non usato**
    - Controlla log GUI: deve indicare `Numba disponibile: True`.
    - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
+
+
+## Specifica core radiale (aggiornata)
+
+Il file `core_radial_visibility.py` contiene la specifica implementata del core.
+
+### Decisioni applicate
+- **Fuori dal dominio radiale** (`R`): nel raster principale il valore è `0`.
+- **`step_global` impostabile** via `RadialConfig.step_m` (default suggerito `24 m`, utile con DTM 8 m).
+- **Direzioni radiali**: `K` consigliato da `K≈2πR/s` con snapping ai preset qualità `4096/8192/12288/16384` (`suggest_k_from_radius`).
+  - Esempi: `R=10 km`, `s=8 m` -> `K≈7854` -> `8192`.
+  - `R=15 km` -> `K≈11781` -> `12288` (o `16384` se si vuole più robustezza angolare).
+- **Infittimento bbox opzionale**: secondo pass separato con `step_fine` + `K_fine`, solo nella bbox (CRS DEM), con output raster dedicato.
+- **Output infittito raster separato** GeoTIFF float32 (non vettoriale).
+
+### Output
+1. **Output principale** (GeoTIFF float32): stesso CRS/transform/shape del DEM, `compress=LZW`, `nodata=-9999`, fuori da `R` = `0`.
+2. **Output infittito opzionale** (GeoTIFF float32):
+   - default **croppato alla bbox**, allineato alla griglia DEM (`aligned_bbox_window`).
+   - `nodata=-9999` fuori dall'area calcolata.
+   - opzione `full_extent=True`: dimensione DEM completa, valori solo nella bbox e nodata fuori.
+
+### Nodata
+- Se la turbina cade su nodata -> errore.
+- `strict_nodata=True`: ai campioni nodata lungo il raggio il raggio viene interrotto.
+- `strict_nodata=False`: i campioni nodata vengono ignorati.
+
+### Nota performance
+- Struttura pronta per Numba-friendly (array numpy + loop lineari + tipi semplici).
+- Multiprocessing **non introdotto** in questa specifica.
