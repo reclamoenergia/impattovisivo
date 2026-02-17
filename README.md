@@ -109,3 +109,19 @@ pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
 5. **Numba non usato**
    - Controlla log GUI: deve indicare `Numba disponibile: True`.
    - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
+
+## PR con conflitti (GitHub)
+Se nella PR compare il messaggio **"This branch has conflicts that must be resolved"**, non puoi fare merge diretto.
+
+Procedi così dal terminale locale:
+```bash
+git fetch origin
+git switch <tuo-branch-pr>
+git merge origin/main
+# risolvi i conflitti nei file indicati, poi:
+git add <file_risolti>
+git commit -m "Resolve merge conflicts with main"
+git push
+```
+
+Poi riapri la PR su GitHub: il pulsante di merge tornerà disponibile.
