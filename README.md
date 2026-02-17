@@ -22,6 +22,23 @@ Installazione dipendenze:
 python -m pip install -r requirements.txt
 ```
 
+## Ripartenza da zero (senza controlli manuali)
+Se vuoi ripartire completamente da zero in locale:
+
+1. cancella la tua vecchia cartella locale;
+2. riclona il repository;
+3. esegui lo script qui sotto dalla root del progetto.
+
+```bat
+bootstrap_clean.bat
+```
+
+Lo script automatizza tutto:
+- crea/aggiorna `.venv`;
+- installa le dipendenze;
+- esegue smoke checks (`compileall` + import dei moduli critici);
+- termina con errore se qualcosa non va.
+
 ## Avvio in sviluppo
 ```bat
 python wind_visible_height_gui.py
