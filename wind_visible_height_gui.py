@@ -5,7 +5,7 @@ import sys
 import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
-from multiprocessing import cpu_count, freeze_support
+from multiprocessing import cpu_count
 from tkinter import filedialog, messagebox
 import tkinter as tk
 from tkinter import ttk
