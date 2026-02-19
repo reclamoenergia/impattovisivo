@@ -92,11 +92,10 @@ Se usi **PowerShell**, esegui con percorso relativo esplicito:
 ```powershell
 .\build_fast.bat
 ```
-Lo script prova automaticamente `py -3.11` (poi `py -3.10`) se il launcher `py` è disponibile.
 Esegue:
 ```bat
-py -3.11 -m pip install -r requirements.txt
-py -3.11 -m PyInstaller --noconfirm --clean wind_visible_height.spec
+python -m pip install -r requirements.txt
+python -m PyInstaller --noconfirm --clean wind_visible_height.spec
 ```
 
 Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-folder, più robusto).
@@ -111,7 +110,7 @@ Se usi **PowerShell**:
 ```
 Esegue:
 ```bat
-py -3.11 -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
+python -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
 ```
 
 ## Packaging notes (GDAL/PROJ + Numba)
@@ -141,11 +140,8 @@ py -3.11 -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
    - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
 7. **Errore `"pyinstaller" non è riconosciuto`**
    - Usa gli script aggiornati oppure lancia esplicitamente:
-     - `py -3.11 -m PyInstaller --noconfirm --clean wind_visible_height.spec`
+     - `python -m PyInstaller --noconfirm --clean wind_visible_height.spec`
    - In PowerShell ricorda il prefisso `./` per gli script locali (`.\build_fast.bat`).
-8. **Hai installato Python 3.11 ma la build usa ancora 3.14**
-   - Verifica: `py -0p` (lista interpreti registrati nel launcher).
-   - Esegui la build con launcher: `py -3.11 build_fast.bat` oppure usa direttamente `.\build_fast.bat` (ora seleziona `py -3.11` in automatico).
 
 
 ## Specifica core radiale (aggiornata)
