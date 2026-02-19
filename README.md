@@ -22,6 +22,23 @@ Installazione dipendenze:
 python -m pip install -r requirements.txt
 ```
 
+## Ripartenza da zero (senza controlli manuali)
+Se vuoi ripartire completamente da zero in locale:
+
+1. cancella la tua vecchia cartella locale;
+2. riclona il repository;
+3. esegui lo script qui sotto dalla root del progetto.
+
+```bat
+bootstrap_clean.bat
+```
+
+Lo script automatizza tutto:
+- crea/aggiorna `.venv`;
+- installa le dipendenze;
+- esegue smoke checks (`compileall` + import dei moduli critici);
+- termina con errore se qualcosa non va.
+
 ## Avvio in sviluppo
 ```bat
 python wind_visible_height_gui.py
@@ -71,10 +88,16 @@ Output:
 ```bat
 build_fast.bat
 ```
+Se usi **PowerShell**, esegui con percorso relativo esplicito:
+```powershell
+.\build_fast.bat
+```
+Lo script prova automaticamente `py -3.11` (poi `py -3.10`) se il launcher `py` è disponibile.
+- Se `py` non è disponibile sul tuo PC, gli script provano automaticamente `python3.11` e `python3.10` prima di usare `python`.
 Esegue:
 ```bat
-python -m pip install -r requirements.txt
-pyinstaller --noconfirm --clean wind_visible_height.spec
+py -3.11 -m pip install -r requirements.txt
+py -3.11 -m PyInstaller --noconfirm --clean wind_visible_height.spec
 ```
 
 Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-folder, più robusto).
@@ -83,9 +106,13 @@ Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-fold
 ```bat
 build_onefile.bat
 ```
+Se usi **PowerShell**:
+```powershell
+.\build_onefile.bat
+```
 Esegue:
 ```bat
-pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
+py -3.11 -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
 ```
 
 ## Packaging notes (GDAL/PROJ + Numba)
@@ -106,9 +133,21 @@ pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
 4. **Errore runtime GDAL/PROJ nell'exe**
    - Preferisci build `one-folder` (`build_fast.bat`).
    - Verifica che nella cartella `dist\wind_visible_height\` siano presenti dati PROJ/GDAL.
-5. **Numba non usato**
+5. **Errore `Failed to load Python DLL ... _internal\python3xx.dll` su altri PC**
+   - Non copiare solo l'`.exe`: distribuisci tutta la cartella `dist\wind_visible_height\` mantenendo la sottocartella `_internal`.
+   - Evita Python 3.13/3.14 in build: usa Python 3.10 o 3.11 (gli script ora fanno controllo automatico).
+   - Se il file DLL esiste ma non viene caricato, installa/ripara **Microsoft Visual C++ Redistributable 2015-2022 (x64)** sul PC target.
+6. **Numba non usato**
    - Controlla log GUI: deve indicare `Numba disponibile: True`.
    - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
+7. **Errore `"pyinstaller" non è riconosciuto`**
+   - Usa gli script aggiornati oppure lancia esplicitamente:
+     - `py -3.11 -m PyInstaller --noconfirm --clean wind_visible_height.spec`
+   - In PowerShell ricorda il prefisso `./` per gli script locali (`.\build_fast.bat`).
+8. **Hai installato Python 3.11 ma la build usa ancora 3.14**
+   - Verifica: `py -0p` (lista interpreti registrati nel launcher).
+   - Esegui la build con launcher: `py -3.11 build_fast.bat` oppure usa direttamente `.\build_fast.bat` (ora seleziona `py -3.11` in automatico).
+   - Se vedi ancora `[0/3] Check Python version` stai eseguendo una vecchia copia di `build_fast.bat`: rifai `git pull` e verifica il file con `Get-Content .\build_fast.bat -Head 20`.
 
 
 ## Specifica core radiale (aggiornata)
