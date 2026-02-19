@@ -88,10 +88,14 @@ Output:
 ```bat
 build_fast.bat
 ```
+Se usi **PowerShell**, esegui con percorso relativo esplicito:
+```powershell
+.\build_fast.bat
+```
 Esegue:
 ```bat
 python -m pip install -r requirements.txt
-pyinstaller --noconfirm --clean wind_visible_height.spec
+python -m PyInstaller --noconfirm --clean wind_visible_height.spec
 ```
 
 Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-folder, più robusto).
@@ -100,9 +104,13 @@ Output consigliato: `dist\wind_visible_height\wind_visible_height.exe` (one-fold
 ```bat
 build_onefile.bat
 ```
+Se usi **PowerShell**:
+```powershell
+.\build_onefile.bat
+```
 Esegue:
 ```bat
-pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
+python -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
 ```
 
 ## Packaging notes (GDAL/PROJ + Numba)
@@ -123,9 +131,17 @@ pyinstaller --noconfirm --clean --onefile wind_visible_height.spec
 4. **Errore runtime GDAL/PROJ nell'exe**
    - Preferisci build `one-folder` (`build_fast.bat`).
    - Verifica che nella cartella `dist\wind_visible_height\` siano presenti dati PROJ/GDAL.
-5. **Numba non usato**
+5. **Errore `Failed to load Python DLL ... _internal\python3xx.dll` su altri PC**
+   - Non copiare solo l'`.exe`: distribuisci tutta la cartella `dist\wind_visible_height\` mantenendo la sottocartella `_internal`.
+   - Evita Python 3.13/3.14 in build: usa Python 3.10 o 3.11 (gli script ora fanno controllo automatico).
+   - Se il file DLL esiste ma non viene caricato, installa/ripara **Microsoft Visual C++ Redistributable 2015-2022 (x64)** sul PC target.
+6. **Numba non usato**
    - Controlla log GUI: deve indicare `Numba disponibile: True`.
    - Reinstalla dipendenze e ricompila con Python 3.10/3.11.
+7. **Errore `"pyinstaller" non è riconosciuto`**
+   - Usa gli script aggiornati oppure lancia esplicitamente:
+     - `python -m PyInstaller --noconfirm --clean wind_visible_height.spec`
+   - In PowerShell ricorda il prefisso `./` per gli script locali (`.\build_fast.bat`).
 
 
 ## Specifica core radiale (aggiornata)
