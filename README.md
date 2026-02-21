@@ -84,6 +84,23 @@ Output:
 3. **Parallelizzazione process-based** (`ProcessPoolExecutor`) a blocchi di righe.
 4. **Numba JIT** (`@njit(cache=True, fastmath=True)`) sul loop core, con fallback Python se non disponibile.
 
+## Build EXE script CLI `unified_view_to_points.py`
+Per creare un eseguibile dedicato allo script CLI di campionamento Unified View:
+
+```bat
+build_unified_view_to_points.bat
+```
+
+In PowerShell:
+```powershell
+.\build_unified_view_to_points.bat
+```
+
+Output atteso:
+- `dist\unified_view_to_points\unified_view_to_points.exe`
+
+La build usa `unified_view_to_points.spec` e include dipendenze geospaziali (`rasterio`, `fiona`).
+
 ## Build EXE (consigliata)
 ```bat
 build_fast.bat
