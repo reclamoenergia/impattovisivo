@@ -150,6 +150,19 @@ py -3.11 -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
    - Se vedi ancora `[0/3] Check Python version` stai eseguendo una vecchia copia di `build_fast.bat`: rifai `git pull` e verifica il file con `Get-Content .\build_fast.bat -Head 20`.
 
 
+
+## Script CLI: Unified View -> punti campionati
+
+È disponibile lo script `tools/unified_view_to_points.py` per convertire una lista di raster Unified View (uno per turbina) in un layer punti (`.gpkg` o `.shp`) con attributi:
+- `n_vis`
+- `h_*` (altezza visibile per turbina)
+- `az_ctr`, `az_min`, `az_max`, `fov_az`
+
+Esempio:
+```bat
+python tools/unified_view_to_points.py --rasters r1.tif r2.tif --turbines turbines.csv --spacing 25 --out out.gpkg
+```
+
 ## Specifica core radiale (aggiornata)
 
 Il file `core_radial_visibility.py` contiene la specifica implementata del core.
