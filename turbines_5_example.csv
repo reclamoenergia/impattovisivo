@@ -1,0 +1,6 @@
+turbine_id;x;y;name
+T01;1660000.00;4845000.00;Turbina Nord
+T02;1660250.00;4845000.00;Turbina Nord-Est
+T03;1660500.00;4845000.00;Turbina Est
+T04;1660000.00;4844750.00;Turbina Ovest
+T05;1660250.00;4844750.00;Turbina Centro
