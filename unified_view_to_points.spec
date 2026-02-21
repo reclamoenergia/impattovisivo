@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules
 
 script = 'tools/unified_view_to_points.py'
 
@@ -14,6 +14,11 @@ hiddenimports = [
     'fiona._shim',
     'fiona.schema',
 ]
+
+# Rasterio/Fiona expose several runtime-loaded submodules (e.g. rasterio.serde)
+# that are not always discovered reliably by static analysis on Windows builds.
+hiddenimports += collect_submodules('rasterio')
+hiddenimports += collect_submodules('fiona')
 
 datas = []
 binaries = []
