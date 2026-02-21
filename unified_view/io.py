@@ -25,21 +25,39 @@ def _parse_csv_delimiter(sample: str) -> str:
     return ";" if sample.count(";") >= sample.count(",") else ","
 
 
+def _normalize_csv_row(row: dict[str, str]) -> dict[str, str]:
+    normalized = {}
+    for key, value in row.items():
+        if key is None:
+            continue
+        norm_key = key.strip().lower().lstrip("\ufeff")
+        normalized[norm_key] = value.strip() if isinstance(value, str) else value
+    return normalized
+
+
 def _load_turbines_csv(path: Path) -> list[Turbine]:
-    raw = path.read_text(encoding="utf-8")
-    delimiter = _parse_csv_delimiter(raw[:4096])
-    rows = list(csv.DictReader(raw.splitlines(), delimiter=delimiter))
+    raw = path.read_text(encoding="utf-8").lstrip("\ufeff")
+    lines = raw.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+
+    delimiter = _parse_csv_delimiter("\n".join(lines)[:4096])
+    rows = list(csv.DictReader(lines, delimiter=delimiter))
     if not rows:
         raise ValueError(f"No rows found in turbine metadata CSV: {path}")
 
     turbines = []
     for row in rows:
-        turbine_id = (row.get("turbine_id") or row.get("id") or "").strip()
+        parsed = _normalize_csv_row(row)
+        turbine_id = (parsed.get("turbine_id") or parsed.get("id") or "").strip()
         if not turbine_id:
             raise ValueError("Missing turbine_id in CSV row")
-        x = float(row["x"])
-        y = float(row["y"])
-        name = row.get("name")
+        try:
+            x = float(parsed["x"])
+            y = float(parsed["y"])
+        except KeyError as exc:
+            raise ValueError("Missing x/y columns in CSV row") from exc
+        name = parsed.get("name")
         turbines.append(Turbine(turbine_id=turbine_id, x=x, y=y, name=name))
     return turbines
 
