@@ -84,6 +84,23 @@ Output:
 3. **Parallelizzazione process-based** (`ProcessPoolExecutor`) a blocchi di righe.
 4. **Numba JIT** (`@njit(cache=True, fastmath=True)`) sul loop core, con fallback Python se non disponibile.
 
+## Build EXE script CLI `unified_view_to_points.py`
+Per creare un eseguibile dedicato allo script CLI di campionamento Unified View:
+
+```bat
+build_unified_view_to_points.bat
+```
+
+In PowerShell:
+```powershell
+.\build_unified_view_to_points.bat
+```
+
+Output atteso:
+- `dist\unified_view_to_points\unified_view_to_points.exe`
+
+La build usa `unified_view_to_points.spec` e include dipendenze geospaziali (`rasterio`, `fiona`).
+
 ## Build EXE (consigliata)
 ```bat
 build_fast.bat
@@ -149,6 +166,19 @@ py -3.11 -m PyInstaller --noconfirm --clean --onefile wind_visible_height.spec
    - Esegui la build con launcher: `py -3.11 build_fast.bat` oppure usa direttamente `.\build_fast.bat` (ora seleziona `py -3.11` in automatico).
    - Se vedi ancora `[0/3] Check Python version` stai eseguendo una vecchia copia di `build_fast.bat`: rifai `git pull` e verifica il file con `Get-Content .\build_fast.bat -Head 20`.
 
+
+
+## Script CLI: Unified View -> punti campionati
+
+È disponibile lo script `tools/unified_view_to_points.py` per convertire una lista di raster Unified View (uno per turbina) in un layer punti (`.gpkg` o `.shp`) con attributi:
+- `n_vis`
+- `h_*` (altezza visibile per turbina)
+- `az_ctr`, `az_min`, `az_max`, `fov_az`
+
+Esempio:
+```bat
+python tools/unified_view_to_points.py --rasters r1.tif r2.tif --turbines turbines.csv --spacing 25 --out out.gpkg
+```
 
 ## Specifica core radiale (aggiornata)
 
