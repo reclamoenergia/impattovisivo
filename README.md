@@ -180,6 +180,27 @@ Esempio:
 python tools/unified_view_to_points.py --rasters r1.tif r2.tif --turbines turbines.csv --spacing 25 --out out.gpkg
 ```
 
+### Interfaccia grafica (GUI) per `unified_view_to_points`
+
+Ora lo strumento supporta anche una GUI desktop Tkinter.
+
+- Avvio GUI esplicito:
+  ```bat
+  python tools/unified_view_to_points.py --gui
+  ```
+- Avvio GUI senza parametri (comodo da doppio click su `.exe`):
+  ```bat
+  python tools/unified_view_to_points.py
+  ```
+
+Nella GUI trovi:
+- selettori file per raster, turbine e output;
+- tutti i parametri principali (`spacing`, `threshold`, `extent`, `mask`, formato output, EPSG, chunk);
+- una sezione con spiegazione sintetica dell'algoritmo e degli input richiesti;
+- area log con avanzamento elaborazione.
+
+Se preferisci l'uso da riga di comando, il comportamento CLI resta invariato quando passi gli argomenti richiesti (`--rasters`, `--turbines`, `--out`).
+
 ## Specifica core radiale (aggiornata)
 
 Il file `core_radial_visibility.py` contiene la specifica implementata del core.
