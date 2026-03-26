@@ -8,6 +8,7 @@ from typing import Optional
 import numpy as np
 import rasterio
 from rasterio.transform import Affine
+from qgis.core import QgsUnitTypes
 
 from .calc_core import OUTPUT_NODATA
 
@@ -59,4 +60,4 @@ def qgis_raster_source_path(raster_layer) -> str:
 def is_metric_projected_crs(qgs_crs) -> bool:
     if not qgs_crs.isValid() or qgs_crs.isGeographic():
         return False
-    return "meter" in qgs_crs.mapUnits().name.lower()
+    return qgs_crs.mapUnits() == QgsUnitTypes.DistanceMeters

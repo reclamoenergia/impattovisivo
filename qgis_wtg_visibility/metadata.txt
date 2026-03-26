@@ -1,6 +1,6 @@
 [general]
 name=WTG Visible Height
-qgisMinimumVersion=3.22
+qgisMinimumVersion=3.28
 description=Calcolo dei metri visibili di aerogeneratori su DEM/DTM (single e multi-WTG).
 version=0.1.0
 author=Impattovisivo

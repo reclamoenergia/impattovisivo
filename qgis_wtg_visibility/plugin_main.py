@@ -4,7 +4,7 @@
 import os
 from typing import List
 
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsRasterLayer, QgsTask, QgsVectorLayer
 
@@ -145,43 +145,70 @@ class WtgVisibilityPlugin:
             QMessageBox.warning(self.iface.mainWindow(), "WTG Visible Height", str(exc))
             return
 
+        dem_layer = self._layer_by_combo(d.dem_combo)
+        dem_path = self._pick_dem_path()
+        run_ctx = {
+            "mode": d.selected_mode(),
+            "dem_path": dem_path,
+            "dem_layer_crs": dem_layer.crs() if dem_layer else None,
+            "observer_height": float(d.observer_spin.value()),
+            "radial_cfg": RadialConfig(
+                radius_m=float(d.radius_spin.value()),
+                step_m=float(d.step_spin.value()),
+                k_rays=int(d.k_spin.value()),
+                strict_nodata=bool(d.strict_check.isChecked()),
+            ),
+            "fine_cfg": FineConfig(
+                enabled=bool(d.fine_enable_check.isChecked()),
+                bbox=BBox(d.bbox_minx.value(), d.bbox_miny.value(), d.bbox_maxx.value(), d.bbox_maxy.value()) if d.fine_enable_check.isChecked() else None,
+                step_m=float(d.step_fine.value()),
+                k_rays=int(d.k_fine.value()),
+                create_separate_raster=bool(d.fine_separate_check.isChecked()),
+            ),
+            "single": {
+                "x": float(d.x_spin.value()),
+                "y": float(d.y_spin.value()),
+                "h": float(d.h_spin.value()),
+                "out_path": d.out_file_edit.text().strip(),
+            },
+            "multi": {
+                "vector_layer_id": d.wtg_combo.currentData(),
+                "h_field": d.h_field_combo.currentText(),
+                "id_field": d.id_field_combo.currentText() if d.id_field_combo.currentText() else None,
+                "output_dir": d.out_dir_edit.text().strip(),
+                "csv_path": d.csv_edit.text().strip() if d.csv_check.isChecked() else None,
+            },
+        }
+
         d.log("Avvio calcolo...")
         d.set_progress(0)
         d.run_btn.setEnabled(False)
 
-        task = ComputeTask("WTG Visible Height", self._run_compute, self._on_done, self._on_fail)
+        task = ComputeTask(
+            "WTG Visible Height",
+            lambda t: self._run_compute(t, run_ctx),
+            self._on_done,
+            self._on_fail,
+        )
         QgsApplication.taskManager().addTask(task)
 
-    def _run_compute(self, task):
-        d = self.dialog
-        dem_path = self._pick_dem_path()
+    def _run_compute(self, task, run_ctx):
+        dem_path = run_ctx["dem_path"]
         dem_data = read_dem_from_path(dem_path)
-
-        radial_cfg = RadialConfig(
-            radius_m=float(d.radius_spin.value()),
-            step_m=float(d.step_spin.value()),
-            k_rays=int(d.k_spin.value()),
-            strict_nodata=bool(d.strict_check.isChecked()),
-        )
-        fine_cfg = FineConfig(
-            enabled=bool(d.fine_enable_check.isChecked()),
-            bbox=BBox(d.bbox_minx.value(), d.bbox_miny.value(), d.bbox_maxx.value(), d.bbox_maxy.value()) if d.fine_enable_check.isChecked() else None,
-            step_m=float(d.step_fine.value()),
-            k_rays=int(d.k_fine.value()),
-            create_separate_raster=bool(d.fine_separate_check.isChecked()),
-        )
-
-        mode = d.selected_mode()
+        radial_cfg = run_ctx["radial_cfg"]
+        fine_cfg = run_ctx["fine_cfg"]
+        mode = run_ctx["mode"]
         if mode == "single":
-            out_path = d.out_file_edit.text().strip()
+            single_ctx = run_ctx["single"]
+            out_path = single_ctx["out_path"]
             values = compute_visibility_radial(
                 dem=dem_data.array,
                 transform=dem_data.transform,
                 dem_nodata=dem_data.nodata,
-                turbine_x=float(d.x_spin.value()),
-                turbine_y=float(d.y_spin.value()),
-                turbine_height=float(d.h_spin.value()),
-                observer_height=float(d.observer_spin.value()),
+                turbine_x=single_ctx["x"],
+                turbine_y=single_ctx["y"],
+                turbine_height=single_ctx["h"],
+                observer_height=run_ctx["observer_height"],
                 config=radial_cfg,
                 progress_cb=lambda p: task.setProgress(p * 90.0),
             )
@@ -193,10 +220,10 @@ class WtgVisibilityPlugin:
                     dem=dem_data.array,
                     transform=dem_data.transform,
                     dem_nodata=dem_data.nodata,
-                    turbine_x=float(d.x_spin.value()),
-                    turbine_y=float(d.y_spin.value()),
-                    turbine_height=float(d.h_spin.value()),
-                    observer_height=float(d.observer_spin.value()),
+                    turbine_x=single_ctx["x"],
+                    turbine_y=single_ctx["y"],
+                    turbine_height=single_ctx["h"],
+                    observer_height=run_ctx["observer_height"],
                     config=RadialConfig(
                         radius_m=radial_cfg.radius_m,
                         step_m=fine_cfg.step_m,
@@ -212,25 +239,26 @@ class WtgVisibilityPlugin:
             task.setProgress(100)
             return {"outputs": outputs, "summary": "1 WTG elaborata: 1 successo, 0 errori"}
 
-        vector_layer = self._layer_by_combo(d.wtg_combo)
-        dem_layer = self._layer_by_combo(d.dem_combo)
+        multi_ctx = run_ctx["multi"]
+        vector_layer = QgsProject.instance().mapLayer(multi_ctx["vector_layer_id"])
+        if vector_layer is None:
+            raise ValueError("Layer WTG non disponibile")
         items = vector_features_to_items(
             vector_layer,
-            d.h_field_combo.currentText(),
-            d.id_field_combo.currentText() if d.id_field_combo.currentText() else None,
-            dem_layer.crs() if dem_layer else None,
+            multi_ctx["h_field"],
+            multi_ctx["id_field"],
+            run_ctx["dem_layer_crs"],
         )
 
-        csv_path = d.csv_edit.text().strip() if d.csv_check.isChecked() else None
         res = run_batch(
             dem_data=dem_data,
             items=items,
-            observer_height=float(d.observer_spin.value()),
+            observer_height=run_ctx["observer_height"],
             radial_cfg=radial_cfg,
-            output_dir=d.out_dir_edit.text().strip(),
+            output_dir=multi_ctx["output_dir"],
             log_cb=lambda m: None,
             progress_cb=lambda p: task.setProgress(p * 100.0),
-            csv_path=csv_path,
+            csv_path=multi_ctx["csv_path"],
         )
         summary = f"WTG elaborate={len(items)}, successi={res.success}, errori={res.failed}"
         return {"outputs": res.outputs, "summary": summary, "errors": res.errors}

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """Dialog principale plugin."""
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
