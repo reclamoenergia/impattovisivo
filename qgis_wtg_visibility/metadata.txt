@@ -1,0 +1,14 @@
+[general]
+name=WTG Visible Height
+qgisMinimumVersion=3.28
+description=Calcolo dei metri visibili di aerogeneratori su DEM/DTM (single e multi-WTG).
+version=0.1.0
+author=Impattovisivo
+email=info@example.com
+about=Plugin QGIS 3.x per calcolare la porzione visibile verticale della WTG su DEM/DTM con calcolo radiale, supporto batch e output GeoTIFF.
+tracker=
+repository=
+category=Raster
+experimental=False
+deprecated=False
+hasProcessingProvider=False
